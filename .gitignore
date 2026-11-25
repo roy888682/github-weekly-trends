@@ -1,0 +1,10 @@
+# 비밀 값이 들어가는 로컬 설정 파일
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# HTML 메일 본문은 Actions 아티팩트로만 보관하고, 저장소에는 마크다운 리포트만 커밋합니다.
+reports/*.html

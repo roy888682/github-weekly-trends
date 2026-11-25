@@ -1,0 +1,75 @@
+# GitHub 주간 신규 인기 프로그램 TOP 10 메일러
+# 매주 월요일 오전 3시(KST)에 지난 7일간 생성된 저장소 중 스타 상위 10개를 골라 메일로 보냅니다.
+name: Weekly GitHub Trends
+
+on:
+  schedule:
+    # 분 시 일 월 요일 → 매주 월요일(1) 03:00
+    - cron: '0 3 * * 1'
+      timezone: 'Asia/Seoul'   # 한국 표준시(KST) 기준. 생략하면 UTC로 해석됩니다.
+  workflow_dispatch:           # Actions 탭의 'Run workflow' 버튼으로 수동 실행(테스트용)
+    inputs:
+      dry_run:
+        description: '메일을 보내지 않고 리포트만 생성 (테스트용)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write              # reports/ 폴더에 주간 리포트를 커밋하기 위해 필요
+
+concurrency:
+  group: weekly-github-trends
+  cancel-in-progress: false
+
+jobs:
+  weekly-top10:
+    name: Collect top 10 & send email
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Collect weekly top 10 and send email
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}              # 자동 제공 (GitHub API 한도 상향)
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}                    # 보내는 Gmail 주소
+          MAIL_TO: ${{ secrets.MAIL_TO }}                        # 받는 주소 (쉼표로 여러 개 가능)
+          SMTP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}       # Gmail 앱 비밀번호 16자리
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}    # 선택: 있으면 Claude가 소개문 작성
+          DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+        run: python scripts/weekly_trends.py
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: weekly-report-${{ github.run_number }}
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Commit report to repository
+        if: success() && !inputs.dry_run
+        continue-on-error: true      # 아카이브 커밋이 실패해도 메일 발송 결과는 성공으로 유지
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports
+          if git diff --cached --quiet; then
+            echo "커밋할 새 리포트가 없습니다."
+            exit 0
+          fi
+          git commit -m "report: weekly GitHub trends $(TZ=Asia/Seoul date +%Y-%m-%d)"
+          git push
