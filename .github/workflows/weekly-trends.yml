@@ -1,11 +1,11 @@
 # GitHub 주간 신규 인기 프로그램 TOP 10 메일러
-# 매주 월요일 오전 3시(KST)에 지난 7일간 생성된 저장소 중 스타 상위 10개를 골라 메일로 보냅니다.
+# 매주 수요일 오전 3시(KST)에 지난 7일간 생성된 저장소 중 스타 상위 10개를 골라 메일로 보냅니다.
 name: Weekly GitHub Trends
 
 on:
   schedule:
-    # 분 시 일 월 요일 → 매주 월요일(1) 03:00
-    - cron: '0 3 * * 1'
+    # 분 시 일 월 요일 → 매주 수요일(3) 03:00  (바꾸면 scripts/weekly_trends.py 의 SCHEDULE_LABEL 도 함께 수정)
+    - cron: '0 3 * * 3'
       timezone: 'Asia/Seoul'   # 한국 표준시(KST) 기준. 생략하면 UTC로 해석됩니다.
   workflow_dispatch:           # Actions 탭의 'Run workflow' 버튼으로 수동 실행(테스트용)
     inputs:
