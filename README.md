@@ -1,12 +1,12 @@
 # GitHub 주간 신규 인기 프로그램 TOP 10 메일러
 
-매주 **월요일 오전 3시(KST)**, 지난 7일 동안 새로 만들어진 GitHub 저장소 중 스타를 가장 많이 받은 프로그램 **10개**를 골라 이메일로 보내는 자동화입니다. GitHub Actions에서 동작하므로 PC나 서버를 켜 둘 필요가 없습니다.
+매주 **수요일 오전 3시(KST)**, 지난 7일 동안 새로 만들어진 GitHub 저장소 중 스타를 가장 많이 받은 프로그램 **10개**를 골라 이메일로 보내는 자동화입니다. GitHub Actions에서 동작하므로 PC나 서버를 켜 둘 필요가 없습니다.
 
 ## 한눈에 보기
 
 | 항목 | 내용 |
 | --- | --- |
-| 실행 시각 | 매주 월요일 03:00 KST — `cron: '0 3 * * 1'` + `timezone: 'Asia/Seoul'` |
+| 실행 시각 | 매주 수요일 03:00 KST — `cron: '0 3 * * 3'` + `timezone: 'Asia/Seoul'` |
 | 집계 대상 | 실행 시점 기준 지난 7일 동안 생성된 공개 저장소, 스타 수 내림차순 |
 | 발송 개수 | 정확히 10개 (10개를 채우지 못하면 메일을 보내지 않고 실행을 실패 처리) |
 | 항목 구성 | 프로그램 이름 · 30~50단어 소개 · 공식 링크(GitHub 저장소 URL, 홈페이지가 있으면 함께 표기) |
@@ -18,7 +18,7 @@
 
 ```mermaid
 flowchart TD
-    A["매주 월요일 03:00 KST<br/>GitHub Actions 스케줄"] --> B["GitHub 검색 API<br/>지난 7일 생성 · 스타 순"]
+    A["매주 수요일 03:00 KST<br/>GitHub Actions 스케줄"] --> B["GitHub 검색 API<br/>지난 7일 생성 · 스타 순"]
     B --> C["선별<br/>포크 · 보관 · 목록 저장소 제외"]
     C --> D["README 수집<br/>30~50단어 소개문 작성"]
     D --> E{"검증<br/>정확히 10개 · 소개 · 링크"}
@@ -39,11 +39,11 @@ flowchart TD
 github-weekly-trends/
 ├── .github/
 │   └── workflows/
-│       └── weekly-trends.yml   # 스케줄(매주 월요일 03:00 KST)과 실행 단계
+│       └── weekly-trends.yml   # 스케줄(매주 수요일 03:00 KST)과 실행 단계
 ├── scripts/
 │   └── weekly_trends.py        # 수집 → 선별 → 소개문 → 검증 → 발송
 ├── tests/
-│   └── test_weekly_trends.py   # 단위 테스트 48개 (네트워크 불필요)
+│   └── test_weekly_trends.py   # 단위 테스트 49개 (네트워크 불필요)
 ├── docs/
 │   └── sample/                 # 실제 데이터로 만든 메일 미리보기
 ├── reports/                    # 매주 자동 커밋되는 리포트 (첫 실행 때 생성)
@@ -116,7 +116,7 @@ Windows에 Git이 없다면 `winget install --id Git.Git -e`로 설치할 수 �
 
 ### 6단계. 자동 실행 확인
 
-- 워크플로 파일이 **기본 브랜치**(`main`)에 있으면 다음 월요일 03:00(KST)부터 자동으로 실행됩니다.
+- 워크플로 파일이 **기본 브랜치**(`main`)에 있으면 다음 수요일 03:00(KST)부터 자동으로 실행됩니다.
 - 실행 기록은 **Actions** 탭에서, 주간 리포트 아카이브는 저장소의 `reports/` 폴더에서 볼 수 있습니다.
 
 ## 스케줄 설정
@@ -126,8 +126,8 @@ Windows에 Git이 없다면 `winget install --id Git.Git -e`로 설치할 수 �
 ```yaml
 on:
   schedule:
-    # 분 시 일 월 요일 → 매주 월요일(1) 03:00
-    - cron: '0 3 * * 1'
+    # 분 시 일 월 요일 → 매주 수요일(3) 03:00  (바꾸면 scripts/weekly_trends.py 의 SCHEDULE_LABEL 도 함께 수정)
+    - cron: '0 3 * * 3'
       timezone: 'Asia/Seoul'   # 한국 표준시(KST) 기준. 생략하면 UTC로 해석됩니다.
   workflow_dispatch:           # Actions 탭의 'Run workflow' 버튼으로 수동 실행(테스트용)
 ```
@@ -138,19 +138,19 @@ on:
 | 시 | `3` | 오전 3시 |
 | 일 | `*` | 매일 |
 | 월 | `*` | 매월 |
-| 요일 | `1` | 월요일 (0 = 일요일) |
+| 요일 | `3` | 수요일 (0 = 일요일) |
 | `timezone` | `Asia/Seoul` | 위 시각을 한국 표준시(UTC+9)로 해석 |
 
 알아 둘 점:
 
-- `timezone` 키는 2026년 3월 GitHub Actions에 추가된 기능입니다. 지원하지 않는 환경(구버전 GitHub Enterprise Server 등)에서는 `timezone` 줄을 지우고 UTC로 환산한 `cron: '0 18 * * 0'`(일요일 18:00 UTC = 월요일 03:00 KST)을 쓰세요.
-- GitHub Actions 스케줄은 매시 정각처럼 실행이 몰리는 시간대에 수 분에서 수십 분 늦게 시작될 수 있고, 부하가 매우 크면 드물게 건너뛰기도 합니다. 정시성이 더 중요하다면 `'5 3 * * 1'`처럼 몇 분 늦춰 두는 편이 안전합니다.
+- `timezone` 키는 2026년 3월 GitHub Actions에 추가된 기능입니다. 지원하지 않는 환경(구버전 GitHub Enterprise Server 등)에서는 `timezone` 줄을 지우고 UTC로 환산한 `cron: '0 18 * * 2'`(화요일 18:00 UTC = 수요일 03:00 KST)를 쓰세요.
+- GitHub Actions 스케줄은 매시 정각처럼 실행이 몰리는 시간대에 수 분에서 수십 분 늦게 시작될 수 있고, 부하가 매우 크면 드물게 건너뛰기도 합니다. 정시성이 더 중요하다면 `'5 3 * * 3'`처럼 몇 분 늦춰 두는 편이 안전합니다.
 - 공개 저장소는 60일 동안 활동이 없으면 스케줄이 자동으로 꺼집니다. 이 워크플로는 매주 리포트를 커밋해 활동을 이어 가지만, 꺼졌다면 Actions 탭에서 **Enable workflow**를 누르면 됩니다.
 - 스케줄 실행은 항상 기본 브랜치의 최신 커밋을 기준으로 합니다.
 
 ## 이메일 내용
 
-- **제목:** `[GitHub 주간 트렌드] 2026-11-30 신규 인기 프로그램 TOP 10`
+- **제목:** `[GitHub 주간 트렌드] 2026-12-02 신규 인기 프로그램 TOP 10`
 - **본문:** HTML(메일 앱에 보이는 카드형 본문)과 텍스트(마크다운) 두 형식을 함께 보냅니다.
 - **항목:** 순위 · 프로그램 이름 · 메타 정보(스타, 포크, 언어, 생성일, 토픽) · 30~50단어 소개 · 공식 링크(+ 홈페이지)
 
@@ -237,12 +237,12 @@ python scripts/weekly_trends.py              # 실제 발송
 
 Claude 요약을 쓰려면 먼저 `pip install -r requirements.txt`를 실행합니다.
 
-**Windows 작업 스케줄러** — 매주 월요일 03:00에 실행:
+**Windows 작업 스케줄러** — 매주 수요일 03:00에 실행:
 
 ```powershell
 $dir = "C:\경로\github-weekly-trends"
 $action = New-ScheduledTaskAction -Execute (Get-Command python).Source -Argument "scripts\weekly_trends.py" -WorkingDirectory $dir
-$trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday -At 3am
+$trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Wednesday -At 3am
 $settings = New-ScheduledTaskSettingsSet -WakeToRun -StartWhenAvailable
 Register-ScheduledTask -TaskName "GitHubWeeklyTrends" -Action $action -Trigger $trigger -Settings $settings
 ```
@@ -253,10 +253,10 @@ PC가 켜져 있거나 절전 상태여야 하며(절전이면 깨워서 실행)
 
 ```bash
 CRON_TZ=Asia/Seoul
-0 3 * * 1 cd /path/to/github-weekly-trends && /usr/bin/python3 scripts/weekly_trends.py >> weekly.log 2>&1
+0 3 * * 3 cd /path/to/github-weekly-trends && /usr/bin/python3 scripts/weekly_trends.py >> weekly.log 2>&1
 ```
 
-`CRON_TZ`는 대부분의 Linux(cronie)에서 지원합니다. 지원하지 않는 cron이고 서버 시간대가 UTC라면 `0 18 * * 0`을 사용하세요.
+`CRON_TZ`는 대부분의 Linux(cronie)에서 지원합니다. 지원하지 않는 cron이고 서버 시간대가 UTC라면 `0 18 * * 2`를 사용하세요.
 
 ## 문제 해결
 
@@ -266,12 +266,12 @@ CRON_TZ=Asia/Seoul
 | `메일 발송에 필요한 설정이 없습니다` | Secret 이름 오타 (`MAIL_FROM`, `MAIL_TO`, `GMAIL_APP_PASSWORD`) |
 | `선정된 프로그램이 N개입니다` | `EXCLUDE_KEYWORDS`, `MAX_PER_OWNER`를 너무 엄격하게 설정하지 않았는지 |
 | 메일이 오지 않음 | 받은편지함의 스팸·프로모션 폴더, 회사 메일 서버의 외부 메일 차단 정책 |
-| 월요일 3시가 지났는데 실행 기록이 없음 | 워크플로 파일이 기본 브랜치에 있는지, 워크플로가 비활성화되지 않았는지, 스케줄 지연(수십 분) 여부 |
+| 수요일 3시가 지났는데 실행 기록이 없음 | 워크플로 파일이 기본 브랜치에 있는지, 워크플로가 비활성화되지 않았는지, 스케줄 지연(수십 분) 여부 |
 | `Commit report to repository` 단계 경고 | 기본 브랜치 보호 규칙이 봇의 푸시를 막고 있는지 확인. 메일 발송에는 영향 없음 |
 | Claude 요약 대신 템플릿이 쓰임 | 실행 로그의 경고 메시지 (API 키 오류, 사용량 한도 등) |
 
 ## 바꾸고 싶을 때
 
-- **발송 시각:** `cron` 값을 수정합니다. 예: 매주 월요일 오전 9시 → `'0 9 * * 1'`
+- **발송 시각:** 워크플로의 `cron` 값과 `scripts/weekly_trends.py`의 `SCHEDULE_LABEL`(메일 하단 안내 문구)을 함께 수정합니다. 예: 매주 수요일 오전 9시 → `'0 9 * * 3'`, `"매주 수요일 오전 9시(KST)"`
 - **받는 사람:** `MAIL_TO` Secret을 수정합니다. 여러 명이면 쉼표로 구분합니다.
 - **개수·기간·소개문 길이:** `scripts/weekly_trends.py` 맨 위의 `TOP_N`, `WINDOW_DAYS`, `MIN_WORDS`, `MAX_WORDS`를 바꿉니다. 현재 값(10개, 7일, 30~50단어)은 요구사항에 맞춘 것이며, 바꾸면 `tests/`의 테스트도 함께 수정해야 합니다.
